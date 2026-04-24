@@ -417,7 +417,7 @@ def quantize(cfg: QuantConfig, baseline_ppl: Optional[float] = None) -> dict:
     # The download happens once in pipeline.py before this function runs.
     # Reading from local disk skips the HF network round-trip on every run.
     # If the path doesn't exist, pipeline.py has a bug — fail immediately.
-    model_path = cfg.volume_model_path
+    model_path = cfg.base_model_path
     if not Path(model_path).exists():
         raise FileNotFoundError(
             f"Model not found at {model_path}. "
@@ -427,7 +427,7 @@ def quantize(cfg: QuantConfig, baseline_ppl: Optional[float] = None) -> dict:
     # Check if quantized artifact already exists — skip re-quantization.
     # WHY check here not in pipeline.py? engine.py owns the save_path convention.
     # If the artifact exists and method is not NONE, return early with cached result.
-    quantized_path = model_path + f"_{cfg.quant_method.value}"
+    quantized_path = cfg.artifact_path
     if cfg.quant_method != QuantMethod.NONE and Path(quantized_path).exists():
         meta_file = Path(quantized_path) / "quant_meta.json"
         if meta_file.exists():
@@ -600,7 +600,7 @@ def quantize(cfg: QuantConfig, baseline_ppl: Optional[float] = None) -> dict:
             )
 
     # ── Step 8: save ─────────────────────────────────────────────────────────
-    save_path = cfg.volume_model_path + f"_{cfg.quant_method.value}"
+    save_path = cfg.artifact_path
     Path(save_path).mkdir(parents=True, exist_ok=True)
 
     print(f"[engine] saving to {save_path}")
